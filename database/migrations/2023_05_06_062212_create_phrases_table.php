@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('author', 255);
             $table->string('source', 100);
             $table->string('category', 100);
+            $table->string('status', 100)->default('pending');
+            $table->string('language', 20);
             $table->timestamps();
         });
     }

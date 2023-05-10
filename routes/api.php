@@ -19,6 +19,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->group( function () {
 
     Route::post('/new', [PhraseController::class, 'store']);
+    Route::get('/phrases', [PhraseController::class, 'index']);
+    Route::get('/phrase/{id}', [PhraseController::class, 'show']);
+    Route::put('/phrase/{id}', [PhraseController::class, 'update']);
+    Route::delete('/phrase/{id}', [PhraseController::class, 'destroy']);
 });
 
 Route::post('register',[ AuthController::class, 'register']);

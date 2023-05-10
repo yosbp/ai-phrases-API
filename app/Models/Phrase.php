@@ -15,6 +15,8 @@ class Phrase extends Model
         'author',
         'source',
         'category',
+        'status',
+        'language'
     ];
 }
 
