@@ -164,4 +164,69 @@ class PhraseController extends Controller
             'message' => 'Phrase Deleted Successfully',
         ], 200);
     }
+
+    public function getPhrasesPublic(int $num)
+    {
+
+        $phrases = Phrase::where('status', 'active')->inRandomOrder()->limit($num)->get()->map(function ($phrase) {
+            return collect($phrase->toArray())
+                ->except(['user_id', 'created_at', 'updated_at'])
+                ->all();
+        });
+
+        if ($phrases->count() < $num) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Not enough phrases',
+            ], 404);
+        };
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Phrases Retrieved Successfully',
+            'data' => $phrases
+        ], 200);
+    }
+
+    public function newPhrasePublic(Request $request)
+    {
+        //Validate Phrase
+        $validatePhrase = Validator::make(
+            $request->all(),
+            [
+                'phrase' => 'required|string|max:255',
+                'author' => 'string|max:255',
+                'source' => 'required|string|max:100',
+                'category' => 'required|string|max:100',
+                'status' => 'string|max:100',
+                'language' => 'string|max:20',
+            ]
+        );
+
+        // Message if validation fails
+        if ($validatePhrase->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validatePhrase->errors()
+            ], 401);
+        }
+
+        // Create Phrase
+        $user = Phrase::create([
+            'phrase' => $request->phrase,
+            'author' => $request->author,
+            'source' => $request->source,
+            'category' => $request->category,
+            'status' => $request->status,
+            'language' => $request->language,
+            'user_id' => 0,
+        ]);
+
+        // Return response
+        return response()->json([
+            'status' => true,
+            'message' => 'Phrase Created Successfully',
+        ], 200);
+    }
 }
