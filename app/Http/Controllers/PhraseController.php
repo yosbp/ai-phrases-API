@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Phrase;
+use Faker\Provider\ar_EG\Text;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 
 class PhraseController extends Controller
@@ -165,12 +167,30 @@ class PhraseController extends Controller
         ], 200);
     }
 
-    public function getPhrasesPublic(int $num)
-    {
 
-        $phrases = Phrase::where('status', 'active')->inRandomOrder()->limit($num)->get()->map(function ($phrase) {
+    public function getPhrasePublic()
+    {
+        $phrase = Phrase::where('status', 'active')->where('language', 'en')->inRandomOrder()->limit(1)->get()->map(function ($phrase) {
             return collect($phrase->toArray())
-                ->except(['user_id', 'created_at', 'updated_at'])
+                ->except(['user_id', 'created_at', 'updated_at', 'language', 'status', 'category']);
+        });
+
+        return response()->json(
+            $phrase,
+            200
+        );
+    }
+
+
+    /**
+     * Display a random listing of the resource based in fetch number.
+     */
+    public function getPhrasesPublic(int $num, ?string $lang)
+    {
+        $language = empty($lang) ? 'en' : $lang;
+        $phrases = Phrase::where('status', 'active')->where('language', $language)->inRandomOrder()->limit($num)->get()->map(function ($phrase) {
+            return collect($phrase->toArray())
+                ->except(['user_id', 'created_at', 'updated_at', 'language', 'status', 'category'])
                 ->all();
         });
 
@@ -182,12 +202,13 @@ class PhraseController extends Controller
         };
 
         return response()->json([
-            'status' => true,
-            'message' => 'Phrases Retrieved Successfully',
-            'data' => $phrases
+            'phrases' => $phrases
         ], 200);
     }
 
+    /**
+     * Save New phrase from public users.
+     */
     public function newPhrasePublic(Request $request)
     {
         //Validate Phrase
@@ -212,8 +233,43 @@ class PhraseController extends Controller
             ], 401);
         }
 
+        //Translate and save in another language
+
+
+        $from = $request->language == 'en' ? 'en' : 'es';
+        $to = $request->language == 'en' ? 'es' : 'en';
+
+        $response = Http::withHeaders([
+            'Ocp-Apim-Subscription-Key' => env('API_KEY_AZURE_TRANSLATE'),
+            'Ocp-Apim-Subscription-Region' => 'eastus',
+            'Content-Type' => 'application/json',
+        ])->post('https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=' . $from . '&to=' . $to, [
+            ['Text' => $request->phrase]
+        ]);
+
+        if ($response->ok()) {
+            $translatedText = $response->json()[0]['translations'][0]['text'];
+            $translate = true;
+
+            // Create Translate Phrase
+
+            $translatePhrase = Phrase::create([
+                'phrase' => $translatedText,
+                'author' => $request->author,
+                'source' => $request->source,
+                'category' => $request->category,
+                'status' => $request->status,
+                'language' => $to,
+                'user_id' => 0,
+            ]);
+        } else {
+            $translate = false;
+        }
+
+
         // Create Phrase
-        $user = Phrase::create([
+
+        $phrase = Phrase::create([
             'phrase' => $request->phrase,
             'author' => $request->author,
             'source' => $request->source,
@@ -227,6 +283,28 @@ class PhraseController extends Controller
         return response()->json([
             'status' => true,
             'message' => 'Phrase Created Successfully',
+            'translate' => $translate,
+        ], 200);
+    }
+
+    /**
+     * Get Basic datas to Dashboard.
+     */
+
+    public function dashboardData()
+    {
+        $phrases = Phrase::all()->count();
+        $pending = Phrase::where('status', 'pending')->count();
+        $actives = Phrase::where('status', 'active')->count();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Dashboard Data Retrieved Successfully',
+            'data' => [
+                'phrases' => $phrases,
+                'pending' => $pending,
+                'actives' => $actives,
+            ]
         ], 200);
     }
 }
