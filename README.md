@@ -21,7 +21,7 @@ This project consists of the backend of a phrase API using Laravel. It provides 
 - **RESTful Endpoints**: The API is built using a RESTful architecture and follows HTTP standards to provide a set of endpoints for creating, reading, updating, and deleting (CRUD) phrases.
 - **Authentication and Authorization**: The API uses authentication and authorization mechanisms to secure the endpoints and ensure that only authorized users can access them. Laravel's token-based authentication system is used to authenticate requests.
 - **Data Validation**: Data sent to the API is validated to ensure it meets the specified rules. Laravel's form validation capabilities are utilized to perform this validation and return appropriate errors if the data is invalid.
-- **Database and ORM**: The API utilizes a database Mysql, to store and manage the phrases.
+- **Database**: The API utilizes a database Mysql, to store and manage the phrases.
 - **Connect with Third Api**: In this case, use Azure Translation api to fetch, modify data and generate response.
 
 ## Technologies Used
